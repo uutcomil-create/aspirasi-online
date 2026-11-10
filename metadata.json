@@ -1,0 +1,6 @@
+{
+  "name": "Portal Aspirasi Siswa - SMP Negeri 1 Ungaran",
+  "description": "Portal aspirasi digital siswa SMP Negeri 1 Ungaran. Suaramu, Perubahan Kita. Sampaikan aspirasi, pantau publikasi, dan baca pengumuman sekolah secara transparan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

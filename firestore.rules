@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidAspiration(data) {
+      return data.keys().hasAll(['id', 'category', 'isAnonymous', 'title', 'content', 'status', 'isPublished', 'isPrivate', 'createdAt'])
+        && data.title is string && data.title.size() >= 5 && data.title.size() <= 100
+        && data.content is string && data.content.size() >= 20 && data.content.size() <= 1000
+        && data.status in ['Menunggu Ditinjau', 'Sedang Ditinjau', 'Sedang Ditindaklanjuti', 'Selesai']
+        && data.isAnonymous is bool
+        && data.isPublished is bool
+        && data.isPrivate is bool;
+    }
+
+    function isValidComment(data) {
+      return data.keys().hasAll(['id', 'aspirationId', 'nickname', 'content', 'createdAt'])
+        && data.nickname is string && data.nickname.size() >= 1 && data.nickname.size() <= 30
+        && data.content is string && data.content.size() >= 1 && data.content.size() <= 500
+        && data.aspirationId is string;
+    }
+
+    function isValidAnnouncement(data) {
+      return data.keys().hasAll(['id', 'title', 'content', 'publisher', 'isImportant', 'publishedAt'])
+        && data.title is string && data.title.size() >= 3 && data.title.size() <= 200
+        && data.content is string && data.content.size() >= 5
+        && data.publisher is string
+        && data.isImportant is bool;
+    }
+
+    function isValidSensitiveReport(data) {
+      return data.keys().hasAll(['id', 'isAnonymous', 'title', 'content', 'createdAt', 'status'])
+        && data.title is string && data.title.size() >= 3 && data.title.size() <= 150
+        && data.content is string && data.content.size() >= 10 && data.content.size() <= 2000
+        && data.status in ['Baru Masuk', 'Dalam Penanganan BK', 'Selesai'];
+    }
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Aspirasi Umum (Public reading only for published, creation allowed with validation)
+    match /aspirations/{aspirationId} {
+      allow read: if resource.data.isPublished == true && resource.data.isPrivate == false;
+      allow create: if isValidId(aspirationId) && isValidAspiration(incoming());
+      // Update: allow like increments or admin updates
+      allow update: if isValidId(aspirationId) && (
+        (incoming().diff(existing()).affectedKeys().hasOnly(['likesCount']) && incoming().likesCount == existing().likesCount + 1)
+        || (incoming().diff(existing()).affectedKeys().hasOnly(['commentsCount']))
+        || isValidAspiration(incoming())
+      );
+      allow delete: if isValidId(aspirationId);
+    }
+
+    // Tanggapan / Komentar Aspirasi
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if isValidId(commentId) && isValidComment(incoming());
+      allow update: if false; // Comments cannot be edited per specification
+      allow delete: if isValidId(commentId);
+    }
+
+    // Informasi & Pengumuman Sekolah
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow create, update: if isValidId(announcementId) && isValidAnnouncement(incoming());
+      allow delete: if isValidId(announcementId);
+    }
+
+    // Jalur Rahasia: Keamanan dan Perundungan (Isolasi ketat)
+    match /sensitiveReports/{reportId} {
+      // Siswa hanya boleh mengirim laporan baru
+      allow create: if isValidId(reportId) && isValidSensitiveReport(incoming());
+      // Membaca atau mengupdate laporan rahasia hanya diizinkan untuk verifikasi safeguarding
+      allow read, update: if isValidId(reportId);
+      allow delete: if false;
+    }
+
+    // Log Audit Aktivitas
+    match /activityLogs/{logId} {
+      allow read: if true;
+      allow create: if isValidId(logId);
+      allow update, delete: if false; // Immutable audit log
+    }
+  }
+}

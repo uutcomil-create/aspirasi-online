@@ -1,0 +1,118 @@
+{
+  "entities": {
+    "Aspiration": {
+      "title": "Aspiration",
+      "description": "Student general aspirations submitted to the school portal",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "category": { "type": "string" },
+        "isAnonymous": { "type": "boolean" },
+        "authorName": { "type": "string" },
+        "authorClass": { "type": "string" },
+        "title": { "type": "string", "minLength": 5, "maxLength": 100 },
+        "content": { "type": "string", "minLength": 20, "maxLength": 1000 },
+        "originalTitle": { "type": "string" },
+        "originalContent": { "type": "string" },
+        "attachmentUrl": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["Menunggu Ditinjau", "Sedang Ditinjau", "Sedang Ditindaklanjuti", "Selesai"]
+        },
+        "isPublished": { "type": "boolean" },
+        "isPrivate": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "publishedAt": { "type": "string" },
+        "likesCount": { "type": "number" },
+        "commentsCount": { "type": "number" }
+      },
+      "required": ["id", "category", "isAnonymous", "title", "content", "status", "isPublished", "isPrivate", "createdAt"]
+    },
+    "SensitiveReport": {
+      "title": "SensitiveReport",
+      "description": "Isolated confidential reports for student safety and anti-bullying",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "isAnonymous": { "type": "boolean" },
+        "reporterName": { "type": "string" },
+        "reporterClass": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "attachmentUrls": { "type": "array" },
+        "createdAt": { "type": "string" },
+        "status": { "type": "string", "enum": ["Baru Masuk", "Dalam Penanganan BK", "Selesai"] },
+        "handledBy": { "type": "string" },
+        "officerNotes": { "type": "string" }
+      },
+      "required": ["id", "isAnonymous", "title", "content", "createdAt", "status"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "Student responses and feedback on published aspirations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "aspirationId": { "type": "string" },
+        "nickname": { "type": "string", "maxLength": 30 },
+        "content": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "aspirationId", "nickname", "content", "createdAt"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Official school announcements and notices",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "publisher": { "type": "string" },
+        "isImportant": { "type": "boolean" },
+        "images": { "type": "array" },
+        "externalLink": { "type": "string" },
+        "publishedAt": { "type": "string" }
+      },
+      "required": ["id", "title", "content", "publisher", "isImportant", "publishedAt"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Audit trail log of admin status mutations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "aspirationId": { "type": "string" },
+        "aspirationTitle": { "type": "string" },
+        "oldStatus": { "type": "string" },
+        "newStatus": { "type": "string" },
+        "adminActor": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "note": { "type": "string" }
+      },
+      "required": ["id", "aspirationId", "aspirationTitle", "oldStatus", "newStatus", "adminActor", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/aspirations/{aspirationId}": {
+      "schema": { "$ref": "#/entities/Aspiration" },
+      "description": "General aspirations submitted by students and moderated by OSIS"
+    },
+    "/sensitiveReports/{reportId}": {
+      "schema": { "$ref": "#/entities/SensitiveReport" },
+      "description": "Confidential safety and anti-bullying reports for school counselors"
+    },
+    "/comments/{commentId}": {
+      "schema": { "$ref": "#/entities/Comment" },
+      "description": "Student comments on published aspirations"
+    },
+    "/announcements/{announcementId}": {
+      "schema": { "$ref": "#/entities/Announcement" },
+      "description": "Official school announcements"
+    },
+    "/activityLogs/{logId}": {
+      "schema": { "$ref": "#/entities/ActivityLog" },
+      "description": "Audit trail for admin moderation and status changes"
+    }
+  }
+}
